@@ -1,0 +1,94 @@
+---
+title: "Health Insurance Cost Data Visualizations"
+author: "Alexis Parra"
+date: "10/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(tidyverse)
+library(ggplot2)
+```
+
+The aim of this data visualization project is to visualize insurance costs based on medical health. The health insurance data set was acquired from https://www.kaggle.com/mirichoi0218/insurance. 
+The columns of the data set are as follows:
+  
+  age: age of primary beneficiary
+  
+  sex:  female, male
+  
+  bmi: Body mass index, providing an understanding of body, weights that are relatively high or low               relative to height
+  
+  children: Number of children covered by health insurance / Number of dependents (not used for this                    analysis)
+  smoker: Smoking
+  
+  region: the beneficiary's residential area in the US, northeast, southeast, southwest, northwest.
+  
+  charges: Individual medical costs billed by health insurance
+
+## Read Data 
+```{r}
+insurance <- read_csv("insurance.csv")
+
+```
+
+# Three Data Visualizations
+## Subplots Visualization: How does health insurance cost compare for the US regions w/smoker data?
+
+```{r}
+insurance %>% ggplot(aes(x = age, y = charges, label = charges,
+             color = smoker)) +
+ geom_line() + geom_point(alpha = .2) + geom_smooth() +
+    facet_wrap(~region, scales = "free_y") +  
+  labs(title = "Health insurance cost based on smoker and age separated by US region",
+       y = "Insurance Cost", x = "Age") 
+```
+## Scatter Plot Visualization: Does BMI affect insurance cost?
+```{r}
+insurance %>% 
+  ggplot(aes(x=bmi, y = charges)) + geom_point(alpha = .3)  +
+  geom_smooth(method = "lm") + labs(title = "BMI in relation with health insurance cost",
+       y = "Insurance Cost", x = "BMI (Body Mass Index)") 
+
+```
+
+## Inferential Stats Visualization: What is the effect of BMI, smoking, and age of insurance health charges?
+```{r}
+library(effects)
+model1 <- insurance %>%
+  lm(formula = charges ~ bmi + smoker + age) 
+
+summary(model1)
+
+effect("bmi", model1) %>%
+  data.frame() %>%
+  ggplot(aes(x = bmi,
+             y = fit,
+             label = round(fit, digits = 2))) +  geom_smooth(method = "lm") +
+  geom_errorbar(aes(ymin = lower,
+                    ymax = upper),
+                width = .2) +
+    geom_label() + labs(subtitle = "BMI affects health insurance charges")
+
+effect("smoker", model1) %>%
+  data.frame() %>%
+  ggplot(aes(x = smoker,
+             y = fit,
+             label = round(fit, digits = 2))) +  geom_smooth(method = "lm") + 
+  geom_errorbar(aes(ymin = lower,
+                    ymax = upper),
+                width = .2) +
+    geom_label() + labs(subtitle = "Smoking largely affects cost of health insurance charges")
+
+effect("age", model1) %>%
+  data.frame() %>%
+  ggplot(aes(x = age,
+             y = fit,
+             label = round(fit, digits = 2))) +  geom_smooth(method = "lm") + 
+  geom_errorbar(aes(ymin = lower,
+                    ymax = upper),
+                width = .2) +
+    geom_label() + labs(subtitle = "As you age your cost of health insurance is very likely to increase ")
+```
